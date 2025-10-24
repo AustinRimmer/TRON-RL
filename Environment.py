@@ -7,6 +7,8 @@ from gymnasium.error import DependencyNotInstalled
 from typing import Optional
 
 class GridWorldEnv(gym.Env):
+    # define metadata dictionary for self.clock.tick(self.metadata["render_fps"]) in render()
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, size: int = 64, reward_scale: float = 1.0, step_reward: float = 0.1):
         # The size of the square grid (5x5 by default)
