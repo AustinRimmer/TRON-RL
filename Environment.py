@@ -123,7 +123,7 @@ class GridWorldEnv(gym.Env):
             self.clock = pygame.time.Clock()
 
         canvas = pygame.Surface(np.flip(self.window_size))
-        canvas.fill((255, 255, 255))
+        canvas.fill((0, 0, 50))
 
         #drawing target first time
         pygame.draw.rect(
