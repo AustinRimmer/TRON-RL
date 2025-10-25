@@ -262,43 +262,6 @@ class Tron(gym.Env):
         info = self._get_info()
         return observation, reward, terminated, truncated, info
     
-    # def step(self, action):
-    #     """Execute one timestep within the environment.
-
-    #     Args:
-    #         action: The action to take (0-3 for directions)
-
-    #     Returns:
-    #         tuple: (observation, reward, terminated, truncated, info)
-    #     """
-    #     #Map the discrete action (0-3) to a movement direction
-    #     direction = self._action_to_direction[action]
-
-    #     #update agent position, making sure it stays in bounds
-    #     #np.clip prevents the agent from walking off the edge
-    #     self._agent_location = np.clip(
-    #         self._agent_location + direction, 0, self.size - 1
-    #     )
-
-    #     #checking if agent reached the target
-    #     #we will have to change this pretty significantly
-    #     terminated = np.array_equal(self._agent_location, self._target_location)
-
-    #     #We don't use truncation in this simple environment
-    #     #(could add a step limit here if desired)
-    #     truncated = False
-
-    #     #reward structure, super simple atm
-    #     #have to call init for it to work
-    #     if terminated:
-    #         reward = self.reward_scale  #Success reward
-    #     else:
-    #         reward = -self.step_reward  #Step penalty (0 by default)
-
-    #     observation = self._get_obs()
-    #     info = self._get_info()
-
-    #     return observation, reward, terminated, truncated, info
 
     #close
     def close(self):
