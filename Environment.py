@@ -6,48 +6,55 @@ import gymnasium as gym
 from gymnasium.error import DependencyNotInstalled
 from typing import Optional
 
-class GridWorldEnv(gym.Env):
-    # define metadata dictionary for self.clock.tick(self.metadata["render_fps"]) in render()
+class Tron(gym.Env):
+    #define metadata dictionary for self.clock.tick(self.metadata["render_fps"]) in render()
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, size: int = 64, reward_scale: float = 1.0, step_reward: float = 0.1):
-        # The size of the square grid (5x5 by default)
+
+        #The size of the square grid (5x5 by default)
         self.size = size
         self.reward_scale = reward_scale
         self.step_reward = step_reward
-        # Initialize positions - will be set randomly in reset()
-        # Using -1,-1 as "uninitialized" state
+
+        #Initialize positions - will be set randomly in reset()
+        #Using -1,-1 as "uninitialized" state
         #self._agent_location = np.array([-1, -1], dtype=np.int32)
         #self._target_location = np.array([-1, -1], dtype=np.int32)
 
-        # Define what the agent can observe
-        # Dict space gives us structured, human-readable observations
+        #Define what the agent can observe
+        #Dict space gives us structured, human-readable observations
 
         #will have to define this better, eventually will see other agent, most likely will need map
         self.observation_space = gym.spaces.Dict(
             {
-                "agent": gym.spaces.Box(0, size - 1, shape=(2,), dtype=int),   # [x, y] coordinates
-                "target": gym.spaces.Box(0, size - 1, shape=(2,), dtype=int),  # [x, y] coordinates
+                "agent": gym.spaces.Box(0, size - 1, shape=(2,), dtype=int),   #[x, y] coordinates
+                "target": gym.spaces.Box(0, size - 1, shape=(2,), dtype=int),  #[x, y] coordinates
             }
         )
 
-        # Define what actions are available (4 directions)
+        #Define what actions are available (4 directions)
         self.action_space = gym.spaces.Discrete(4)
 
-        # Map action numbers to actual movements on the grid
-        # This makes the code more readable than using raw numbers
+        #Map action numbers to actual movements on the grid
+        #This makes the code more readable than using raw numbers
         self._action_to_direction = {
-            0: np.array([1, 0]),   # Move right (positive x)
-            1: np.array([0, 1]),   # Move up (positive y)
-            2: np.array([-1, 0]),  # Move left (negative x)
-            3: np.array([0, -1]),  # Move down (negative y)
+            0: np.array([1, 0]),   #Move right (positive x)
+            1: np.array([0, 1]),   #Move up (positive y)
+            2: np.array([-1, 0]),  #Move left (negative x)
+            3: np.array([0, -1]),  #Move down (negative y)
         }
 
         #init rendering variables for PyGame
         self.window = None
         self.clock = None
-        self.window_size = (512, 512)  # Fixed window size for rendering
-        self.window_cell_size = self.window_size[0] // self.size  # Size of each grid cell
+        self.window_size = (512, 512)  #Fixed window size for rendering
+        self.window_cell_size = self.window_size[0] // self.size  #Size of each grid cell
+
+        self.render_mode = 'human' #add default redner mode
+        #placeholder for agent positions 
+        self._agent_location = np.array([self.size - 1, self.size // 2], dtype=int)
+        self._target_location = np.array([self.size - 1, self.size // 2], dtype=int)
 
     def _get_obs(self):
         """Convert internal state to observation format.
@@ -56,7 +63,7 @@ class GridWorldEnv(gym.Env):
             dict: Observation with agent and target positions
         """
         #this means our agent can see its own and its targets location, we can just make this target the other agent and update
-        return {"agent": self._agent_location, "target": self._target_location}
+        return {"agent1": self._agent_location, "agent2": self._target_location}
 
 
     def _get_info(self):
@@ -81,20 +88,26 @@ class GridWorldEnv(gym.Env):
         Returns:
             tuple: (observation, info) for the initial state
         """
-        # IMPORTANT: Must call this first to seed the random number generator
+        #IMPORTANT: Must call this first to seed the random number generator
         super().reset(seed=seed)
 
         #places agent1 on right side vertically centered
-        self._agent_location = np.array([self.size - 1, self.size // 2], dtype=int)
+        self._agent_location = np.array([0, self.size // 2], dtype=int)
 
-        # Randomly place target, ensuring it's different from agent position
+        #Randomly place target, ensuring it's different from agent position
         #will have to change these to pre determined positions later
-        self._target_location = self._agent_location
+        #editited to just be opposite agent
+        self._target_location = np.array([self.size - 1, self.size // 2], dtype=int)
 
-        while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.integers(
-                0, self.size, size=2, dtype=int
-            )
+        # while np.array_equal(self._target_location, self._agent_location):
+        #     self._target_location = self.np_random.integers(
+        #         0, self.size, size=2, dtype=int
+        #     )
+
+         # initialize trails with starting positions
+        self.trail_length = 3 #trail length of 3 squares
+        self.agent_trail = [tuple(self._agent_location)]
+        self.target_trail = [tuple(self._target_location)]
 
         observation = self._get_obs()
         info = self._get_info()
@@ -107,7 +120,7 @@ class GridWorldEnv(gym.Env):
     #rendering stuff:
     def render(self):
         """Render the environment for human viewing."""
-        # PyGame has a different coordinate system (flip)
+        #PyGame has a different coordinate system (flip)
         try:
             import pygame
         except ImportError as e:
@@ -142,6 +155,27 @@ class GridWorldEnv(gym.Env):
             (np.flip(self._agent_location) + 0.5) * self.window_cell_size,
             self.window_cell_size / 3,
             )
+        
+        #draw trails
+        for pos in self.agent_trail:
+            pygame.draw.rect(
+                canvas,
+                (0, 0, 255),
+                pygame.Rect(
+                    self.window_cell_size * np.flip(np.array(pos)),
+                    (self.window_cell_size, self.window_cell_size),
+                ),
+            )
+
+        for pos in self.target_trail:
+            pygame.draw.rect(
+                canvas,
+                (255, 0, 0),
+                pygame.Rect(
+                    self.window_cell_size * np.flip(np.array(pos)),
+                    (self.window_cell_size, self.window_cell_size),
+                ),
+            )
 
         #grid
         for i in range(self.size):
@@ -162,21 +196,20 @@ class GridWorldEnv(gym.Env):
             )
 
         if self.render_mode == "human":
-            # The following line copies our drawings from `canvas` to the visible window
+            #The following line copies our drawings from `canvas` to the visible window
             self.window.blit(canvas, canvas.get_rect())
             pygame.event.pump()
             pygame.display.update()
 
-            # We need to ensure that human-rendering occurs at the predefined framerate.
-            # The following line will automatically add a delay to keep the framerate stable.
+            #We need to ensure that human-rendering occurs at the predefined framerate.
+            #The following line will automatically add a delay to keep the framerate stable.
             self.clock.tick(self.metadata["render_fps"])
-        else:  # rgb_array
+        else:  #rgb_array
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
     #agent behaviour stuff:
-
-    def step(self, action):
+    def step(self, agent_action, target_action):
         """Execute one timestep within the environment.
 
         Args:
@@ -185,34 +218,87 @@ class GridWorldEnv(gym.Env):
         Returns:
             tuple: (observation, reward, terminated, truncated, info)
         """
-        # Map the discrete action (0-3) to a movement direction
-        direction = self._action_to_direction[action]
+        #Map the discrete action (0-3) to a movement direction fro moth agent and target(other agent)
+        agent_direction = self._action_to_direction[agent_action]
+        target_direction = self._action_to_direction[target_action]
 
         #update agent position, making sure it stays in bounds
-        # np.clip prevents the agent from walking off the edge
-        self._agent_location = np.clip(
-            self._agent_location + direction, 0, self.size - 1
-        )
+        #np.clip prevents the agent from walking off the edge
+        agent_pos = np.clip(self._agent_location + agent_direction, 0, self.size - 1)
+        target_pos = np.clip(self._target_location + target_direction, 0, self.size - 1)
 
-        #checking if agent reached the target
-        #we will have to change this pretty significantly
+        new_agent_pos = tuple(agent_pos)
+        new_target_pos = tuple(target_pos)
+        #terminate if the agent has caught the target
         terminated = np.array_equal(self._agent_location, self._target_location)
 
-        # We don't use truncation in this simple environment
-        # (could add a step limit here if desired)
-        truncated = False
+        #terminate if there is a collision with the trail or 
+        if new_agent_pos in self.target_trail or new_target_pos in self.agent_trail:
+            terminated = True
+
+        if not terminated:
+            #update positions for both agents
+            self._agent_location = agent_pos
+            self._target_location = target_pos
+
+            #update trail positions
+            self.agent_trail.append(tuple(self._agent_location))
+            self.target_trail.append(tuple(self._target_location))
+
+            if len(self.agent_trail) > self.trail_length:
+                self.agent_trail.pop(0)
+            if len(self.target_trail) > self.trail_length:
+                self.target_trail.pop(0)
 
         #reward structure, super simple atm
         #have to call init for it to work
-        if terminated:
-            reward = self.reward_scale  # Success reward
+        if terminated: #wil investigate further differentiating betweene loses and wins
+            reward = self.reward_scale  #Success reward
         else:
-            reward = -self.step_reward  # Step penalty (0 by default)
+            reward = -self.step_reward  #Step penalty (0 by default)
+        truncated = False #not used in simple environment
 
         observation = self._get_obs()
         info = self._get_info()
-
         return observation, reward, terminated, truncated, info
+    
+    # def step(self, action):
+    #     """Execute one timestep within the environment.
+
+    #     Args:
+    #         action: The action to take (0-3 for directions)
+
+    #     Returns:
+    #         tuple: (observation, reward, terminated, truncated, info)
+    #     """
+    #     #Map the discrete action (0-3) to a movement direction
+    #     direction = self._action_to_direction[action]
+
+    #     #update agent position, making sure it stays in bounds
+    #     #np.clip prevents the agent from walking off the edge
+    #     self._agent_location = np.clip(
+    #         self._agent_location + direction, 0, self.size - 1
+    #     )
+
+    #     #checking if agent reached the target
+    #     #we will have to change this pretty significantly
+    #     terminated = np.array_equal(self._agent_location, self._target_location)
+
+    #     #We don't use truncation in this simple environment
+    #     #(could add a step limit here if desired)
+    #     truncated = False
+
+    #     #reward structure, super simple atm
+    #     #have to call init for it to work
+    #     if terminated:
+    #         reward = self.reward_scale  #Success reward
+    #     else:
+    #         reward = -self.step_reward  #Step penalty (0 by default)
+
+    #     observation = self._get_obs()
+    #     info = self._get_info()
+
+    #     return observation, reward, terminated, truncated, info
 
     #close
     def close(self):

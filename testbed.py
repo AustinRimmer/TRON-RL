@@ -1,4 +1,4 @@
-from Environment import GridWorldEnv
+from Environment import Tron
 import sys
 import numpy as np
 import pygame
@@ -8,7 +8,7 @@ def main():
 
     pygame.init()
 
-    env = GridWorldEnv(size=32)
+    env = Tron(size=32)
     env.render_mode = "human"
     obs, info = env.reset()
 
