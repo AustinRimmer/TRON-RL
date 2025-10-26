@@ -1,7 +1,7 @@
 import numpy as np
 from Environment import Tron
 def main():#test for collisions
-    env = Tron(size=32) #smaller just to force cllsion faster)
+    env = Tron(size=64) #smaller just to force cllsion faster)
     observation, info = env.reset()
 
 
