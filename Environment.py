@@ -105,7 +105,7 @@ class Tron(gym.Env):
         #     )
 
          # initialize trails with starting positions
-        self.trail_length = 3 #trail length of 3 squares
+        self.trail_length = 100 #trail length of 3 squares
         self.agent_trail = [tuple(self._agent_location)]
         self.target_trail = [tuple(self._target_location)]
 
