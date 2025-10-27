@@ -7,6 +7,7 @@ from gymnasium.error import DependencyNotInstalled
 from typing import Optional
 
 class Tron(gym.Env):
+    #inital setup took from this: https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation
     #define metadata dictionary for self.clock.tick(self.metadata["render_fps"]) in render()
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
