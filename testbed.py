@@ -8,7 +8,7 @@ def main():
 
     pygame.init()
 
-    env = Tron(size=32)
+    env = Tron(size=64)
     env.render_mode = "human"
     obs, info = env.reset()
 
@@ -31,6 +31,7 @@ def main():
                     running = False
                 elif event.key in key_to_action:
                     action = key_to_action[event.key]
+                    action2 = np.random.randint(4)
                     if action == 1:
                         actionTaken = "right"
                     elif action == 2:
@@ -39,8 +40,17 @@ def main():
                         actionTaken = "left"
                     elif action == 0:
                         actionTaken = "down"
-                    obs, reward, terminated, truncated, info = env.step(action)
-                    print(f"Action: {actionTaken}, Reward: {reward}, Distance: {info['distance']}")
+                    if action2 == 1:
+                            action2Taken = "right"
+                    elif action2 == 2:
+                        action2Taken = "up"
+                    elif action2 == 3:
+                        action2Taken = "left"
+                    elif action2 == 0:
+                        action2Taken = "down"
+                    obs, (r_blue, r_red), terminated, truncated, info = env.step(action2, action)
+                    print(f"Blue: Action: {actionTaken}, Reward: {r_blue}, Distance: {info['distance']}")
+                    print(f"Red: Action: {action2Taken}, Reward: {r_red}, Distance: {info['distance']}")
                     if terminated:
                         print("Target reached! Resetting environment.")
                         obs, info = env.reset()

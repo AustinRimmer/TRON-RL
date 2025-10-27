@@ -6,8 +6,9 @@ import gymnasium as gym
 from gymnasium.error import DependencyNotInstalled
 from typing import Optional
 
+#inital setup took from this: https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation
+
 class Tron(gym.Env):
-    #inital setup took from this: https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation
     #define metadata dictionary for self.clock.tick(self.metadata["render_fps"]) in render()
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
@@ -53,7 +54,7 @@ class Tron(gym.Env):
         self.window_cell_size = self.window_size[0] // self.size  #Size of each grid cell
 
         self.render_mode = 'human' #add default redner mode
-        #placeholder for agent positions 
+        #placeholder for agent positions
         self._agent_location = np.array([self.size - 1, self.size // 2], dtype=int)
         self._target_location = np.array([self.size - 1, self.size // 2], dtype=int)
 
@@ -105,8 +106,8 @@ class Tron(gym.Env):
         #         0, self.size, size=2, dtype=int
         #     )
 
-         # initialize trails with starting positions
-        self.trail_length = 100 #trail length of 3 squares
+        # initialize trails with starting positions
+        self.trail_length = 1000 #trail length of 3 squares
         self.agent_trail = [tuple(self._agent_location)]
         self.target_trail = [tuple(self._target_location)]
 
@@ -156,7 +157,7 @@ class Tron(gym.Env):
             (np.flip(self._agent_location) + 0.5) * self.window_cell_size,
             self.window_cell_size / 3,
             )
-        
+
         #draw trails
         for pos in self.agent_trail:
             pygame.draw.rect(
@@ -165,7 +166,7 @@ class Tron(gym.Env):
                 pygame.Rect(
                     self.window_cell_size * np.flip(np.array(pos)),
                     (self.window_cell_size, self.window_cell_size),
-                ),
+                    ),
             )
 
         for pos in self.target_trail:
@@ -175,7 +176,7 @@ class Tron(gym.Env):
                 pygame.Rect(
                     self.window_cell_size * np.flip(np.array(pos)),
                     (self.window_cell_size, self.window_cell_size),
-                ),
+                    ),
             )
 
         #grid
@@ -219,6 +220,10 @@ class Tron(gym.Env):
         Returns:
             tuple: (observation, reward, terminated, truncated, info)
         """
+        #initialize rewards to step reward
+        r_blue = self.step_reward
+        r_red = self.step_reward
+
         #Map the discrete action (0-3) to a movement direction fro moth agent and target(other agent)
         agent_direction = self._action_to_direction[agent_action]
         target_direction = self._action_to_direction[target_action]
@@ -233,8 +238,12 @@ class Tron(gym.Env):
         #terminate if the agent has caught the target
         terminated = np.array_equal(self._agent_location, self._target_location)
 
-        #terminate if there is a collision with the trail or 
-        if new_agent_pos in self.target_trail or new_target_pos in self.agent_trail:
+        loss = False
+
+        #terminate if there is a collision with enemy/self trail
+        if (new_agent_pos in self.target_trail or new_target_pos in self.agent_trail or #touching a trail
+                new_agent_pos in self.agent_trail or new_target_pos in self.target_trail): #touching own trail
+            loss = True
             terminated = True
 
         if not terminated:
@@ -254,15 +263,23 @@ class Tron(gym.Env):
         #reward structure, super simple atm
         #have to call init for it to work
         if terminated: #wil investigate further differentiating betweene loses and wins
-            reward = self.reward_scale  #Success reward
-        else:
-            reward = -self.step_reward  #Step penalty (0 by default)
+            blue_hit = new_agent_pos in self.target_trail or new_agent_pos in self.agent_trail
+            red_hit = new_target_pos in self.agent_trail or new_target_pos in self.target_trail
+
+            if blue_hit and red_hit:
+                r_blue = r_red = 0
+            elif blue_hit:
+                r_blue, r_red = -20, 20
+            elif red_hit:
+                r_blue, r_red = 20, -20
+            else:
+                r_blue = r_red = self.step_reward
         truncated = False #not used in simple environment
 
         observation = self._get_obs()
         info = self._get_info()
-        return observation, reward, terminated, truncated, info
-    
+        return observation, (r_blue, r_red), terminated, truncated, info
+
 
     #close
     def close(self):
