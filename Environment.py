@@ -94,12 +94,12 @@ class Tron(gym.Env):
         super().reset(seed=seed)
 
         #places agent1 on right side vertically centered
-        self._agent_location = np.array([0, self.size // 2], dtype=int)
+        self._agent_location = np.array([self.size // 2, self.size - 1], dtype=int)
 
         #Randomly place target, ensuring it's different from agent position
         #will have to change these to pre determined positions later
         #editited to just be opposite agent
-        self._target_location = np.array([self.size - 1, self.size // 2], dtype=int)
+        self._target_location = np.array([self.size // 2, 0], dtype=int)
 
         # while np.array_equal(self._target_location, self._agent_location):
         #     self._target_location = self.np_random.integers(
@@ -133,11 +133,11 @@ class Tron(gym.Env):
         if self.window is None and self.render_mode == "human":
             pygame.init()
             pygame.display.init()
-            self.window = pygame.display.set_mode(np.flip(self.window_size))
+            self.window = pygame.display.set_mode(self.window_size)
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
-        canvas = pygame.Surface(np.flip(self.window_size))
+        canvas = pygame.Surface(self.window_size)
         canvas.fill((0, 0, 50))
 
         #drawing target first time
@@ -145,16 +145,19 @@ class Tron(gym.Env):
             canvas,
             (255, 0, 0),
             pygame.Rect(
-                self.window_cell_size * np.flip(self._target_location),
+               self.to_screen_xy(self._target_location),
                 (self.window_cell_size, self.window_cell_size),
-                ),
+            )
         )
 
         #draw agent
+        ax, ay = self._agent_location
+        cx, cy = self.to_screen_xy((ax, ay))
+        center = (cx + self.window_cell_size*0.5, cy + self.window_cell_size*0.5)
         pygame.draw.circle(
             canvas,
             (0, 0, 255),
-            (np.flip(self._agent_location) + 0.5) * self.window_cell_size,
+            center,
             self.window_cell_size / 3,
             )
 
@@ -164,7 +167,7 @@ class Tron(gym.Env):
                 canvas,
                 (0, 0, 255),
                 pygame.Rect(
-                    self.window_cell_size * np.flip(np.array(pos)),
+                    self.to_screen_xy(pos),
                     (self.window_cell_size, self.window_cell_size),
                     ),
             )
@@ -174,7 +177,7 @@ class Tron(gym.Env):
                 canvas,
                 (255, 0, 0),
                 pygame.Rect(
-                    self.window_cell_size * np.flip(np.array(pos)),
+                    self.to_screen_xy(pos),
                     (self.window_cell_size, self.window_cell_size),
                     ),
             )
@@ -210,6 +213,14 @@ class Tron(gym.Env):
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
+
+    def to_screen_xy(self, pos):
+        """Convert (x, y) in the grid coords to top left origin pygame pixels"""
+        x, y = int(pos[0]), int(pos[1])
+        # invert y because y increases as you go down
+        ys = (self.size - 1 - y)
+        return (x * self.window_cell_size, ys * self.window_cell_size)
+
     #agent behaviour stuff:
     def step(self, agent_action, target_action):
         """Execute one timestep within the environment.
