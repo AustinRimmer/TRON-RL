@@ -7,7 +7,7 @@ import pygame
 def main():
     pygame.init()
 
-    env = Tron(size=32)
+    env = Tron(size=16)
     env.render_mode = "human"
 
     #cr8s 2 dynaQ bbs
