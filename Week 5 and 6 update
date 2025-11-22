@@ -9,6 +9,8 @@ Week 6
 - Finalizing Dyna-Q algorithm (Rayhan & Austin)
 - Finalizing MCTS algorithm (Sahel & Teniola)
 
+**Changes are pending on GitHub since there must be a discussion about reviewing algorithms and making changes for the new environment power-up**
+
 Plans for the Future
 - Set up/research performance metrics to compare our algorithms against each other
 - train agents and compare performance
