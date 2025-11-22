@@ -1,0 +1,16 @@
+Week 5
+- asked TA and prof for guidance on project novelty direction (Group 35)
+- implemented a power-up in the environment (Teniola & Sahel)
+  power-up includes a speed boost that allows a bike to travel 2 units
+- Worked on Dyna-Q implementation (Rayhan & Austin)
+
+Week 6
+- Planning training and project presentation (Group 35)
+- Finalizing Dyna-Q algorithm (Rayhan & Austin)
+- Finalizing MCTS algorithm (Sahel & Teniola)
+
+Plans for the Future
+- Set up/research performance metrics to compare our algorithms against each other
+- train agents and compare performance
+- Create a presentation of our findings on how each algorithm fares, and record a video detailing the project
+- Have fun
