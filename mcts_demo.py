@@ -57,7 +57,7 @@ def main():
         # our move via MCTS
         our_action = agent.act(env)
         # opponent (safe random can be used here)
-        opp_action = random.randint(0, 3)
+        opp_action = safe_random_opponent_action(env)
 
         # take one environment step
         obs, (r_our, r_opp), terminated, truncated, info = env.step(our_action, opp_action)
@@ -69,10 +69,10 @@ def main():
         blue_pos = tuple(env._agent_location.tolist())
         red_pos = tuple(env._target_location.tolist())
 
-        print(f"Step {step:03d} | Blue: {dir_map[our_action]:<5} | Red: {dir_map[opp_action]:<5} "
-              f"| Reward (Blue,Red): ({r_our:+5.1f}, {r_opp:+5.1f}) "
-              f"| Blue Pos: {blue_pos} | Red Pos: {red_pos} "
-              f"| Total Blue Reward: {total_reward:+6.1f}")
+        # print(f"Step {step:03d} | Blue: {dir_map[our_action]:<5} | Red: {dir_map[opp_action]:<5} "
+        #       f"| Reward (Blue,Red): ({r_our:+5.1f}, {r_opp:+5.1f}) "
+        #       f"| Blue Pos: {blue_pos} | Red Pos: {red_pos} "
+        #       f"| Total Blue Reward: {total_reward:+6.1f}")
 
         step += 1
 
@@ -83,6 +83,35 @@ def main():
             step = 0
             obs, info = env.reset()
             agent.reset_tree()
+
+
+def safe_random_opponent_action(env):
+    """
+    Chooses a random action for the opponent that avoids immediate death.
+    Avoids stepping into its own trail, the agent's trail, or staying in place due to wall clipping.
+    """
+    safe_actions = []
+    tx, ty = env._target_location
+    size = env.size
+    trails = set(env.agent_trail) | set(env.target_trail)
+
+    for a in range(4):
+        dx, dy = env._action_to_direction[a]
+        nx = max(0, min(size - 1, tx + dx))
+        ny = max(0, min(size - 1, ty + dy))
+        new_pos = (nx, ny)
+
+        # Avoid staying in place due to wall clipping
+        if new_pos == (tx, ty):
+            continue
+        # Avoid stepping into any trail
+        if new_pos in trails:
+            continue
+
+        safe_actions.append(a)
+
+    # If boxed in, return any action to keep simulation moving
+    return random.choice(safe_actions if safe_actions else [0, 1, 2, 3])
 
 if __name__ == "__main__":
     main()

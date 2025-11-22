@@ -85,7 +85,7 @@ class SimTronState:
         new_target_pos = (self._clip(tx + dx2, 0, self.size - 1),
                           self._clip(ty + dy2, 0, self.size - 1))
 
-        # Collision check (uses *new* positions vs existing trails, like the env)
+        # Collision check (uses new positions vs existing trails, like the env)
         loss = False
         if (new_agent_pos in self.target_trail or
                 new_target_pos in self.agent_trail or
@@ -203,8 +203,8 @@ class MCTSAgent:
 
     def act(self, env):
         """
-        Choose an action for the current env state. Builds/updates a search tree
-        rooted at the current state (we grab state directly from env).
+        Choose an action for the current env state. 
+        Builds/updates a search tree rooted at the current state
         """
         if self.root is None:
             self.set_root_from_env(env)
@@ -220,7 +220,25 @@ class MCTSAgent:
         if not self.root.children:
             return random.randint(0, 3)
 
-        best_a = max(self.root.children.items(), key=lambda kv: kv[1].N)[0]
+        # for a, child in self.root.children.items():
+        #     print(f"Action {a}: N={child.N}, W={child.W:.2f}, Avg={child.W / child.N:.2f}")
+
+        best_a = max(self.root.children.items(), key=lambda kv: (kv[1].W / kv[1].N) if kv[1].N > 0 else float('-inf'))[0]
+        
+        # Check if best_a would immediately kill us
+        state = SimTronState.from_env(env)
+        dx, dy = SimTronState.DIRS[best_a]
+        ax, ay = state.agent_pos
+        nx = max(0, min(state.size - 1, ax + dx))
+        ny = max(0, min(state.size - 1, ay + dy))
+        new_pos = (nx, ny)
+
+        if (new_pos == (ax, ay)) or (new_pos in state.agent_trail) or (new_pos in state.target_trail):
+            # Suicide detected - fallback to safe random
+            safe_actions = self._safe_our_actions_from_state(state)
+            fallback = random.choice(safe_actions)
+            #print(f"[MCTS] Avoided suicidal action {best_a}, picked fallback {fallback}")
+            return fallback
         return best_a
 
     # ---------- one simulation ----------
@@ -246,14 +264,15 @@ class MCTSAgent:
             path.append(child)
             node = child
             terminal = term
+            immediate_reward = r_our
         else:
-            # No untried actions; we’re at a leaf that’s fully expanded.
+            # No untried actions; we're at a leaf that's fully expanded.
             # We'll start rollout from here.
             pass
 
         # 3) Simulation (rollout) from 'node'
-        G = 0.0
-        discount = 1.0
+        G = immediate_reward if 'immediate_reward' in locals() else 0.0
+        discount = self.gamma
         steps = 0
 
         cur_state = node.state
@@ -278,8 +297,7 @@ class MCTSAgent:
 
     def _safe_our_actions_from_state(self, state: SimTronState):
         """
-        Our agent (blue): actions that won't immediately collide with
-        our trail, the enemy trail, or 'wall-stay' (clipped to same cell).
+        Our agent (blue): picks actions that do not lose the game
         """
         safe = []
         ax, ay = state.agent_pos
@@ -305,8 +323,7 @@ class MCTSAgent:
 
     def _safe_opp_actions_from_state(self, state: SimTronState):
         """
-        Opponent (red): non-suicidal actions (you already added similar logic).
-        Keeping here for completeness/consistency.
+        Opponent (red): will pick actions that do not lose the game
         """
         safe = []
         tx, ty = state.target_pos
@@ -325,7 +342,7 @@ class MCTSAgent:
         return safe if safe else [0, 1, 2, 3]
 
 
-# ----------------------- Convenience runner (optional) ------------------------
+# ----------------------- Convenience runner ------------------------
 
 def run_mcts_vs_random(env, agent: MCTSAgent, render=True, reset_on_terminal=True, max_steps=10_000):
     """
