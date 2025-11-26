@@ -1,89 +1,4 @@
 
-"""
-OLD A2 DYNA-Q:
-FROM AUSTINS A2
-
-
-import numpy as np
-def DynaQ(env,gamma, step_size, epsilon, max_episode, max_model_step):
-    #this was such a pain to make run in under 1 minute. inital implementation ran in 216 secs lol
-    #init Q(s,a) all s in S, all a in A Q terminal = 0
-    S = env.n_states
-    A = env.n_actions
-    rng = np.random.default_rng()
-    q = rng.uniform(low=1e-2, high=1e-2, size=(S, A))
-
-    model = {}
-    observedStateActions = []
-    #needed to go fast
-    seen = set()
-
-    #Loop forever (for each episode)
-    for episode in range(max_episode):
-        #init S
-        state, _ = env.reset()
-        finished = False
-        #loop for each step of episode
-        while not finished:
-            #choose A from S using policy derived from Q
-            if rng.random() < epsilon:
-                action = rng.integers(0, A)
-            else:
-                bestActions = np.flatnonzero(q[state] == np.max(q[state]))
-                action = int(rng.choice(bestActions))
-
-            #take action A, observe R, S'
-            nextS,reward,terminated,truncated, _ = env.step(action)
-            finished = terminated or truncated
-
-            #target = R + gamma max Q(S',a')
-            bestQ = np.max(q[nextS])
-            target = reward + gamma * bestQ
-
-            #Q(S,A) = Q(S,A) + a[R + gamma max Q(S',a) - Q(S,A)]
-            if finished:
-                q[state,action] += step_size *(reward - q[state, action])
-            else:
-                q[state,action] += step_size * (target - q[state, action])
-
-            if(state,action) not in seen:
-                #for speed only
-                seen.add((state,action))
-                observedStateActions.append((state,action))
-
-            model[(state, action)] = (nextS, reward, finished)
-
-            #Planning
-            #this is where i had to make some changes
-            if observedStateActions and max_model_step > 0:
-                observedArray = np.array(observedStateActions)
-                #sample prev obsrvd states
-                indexs = rng.choice(len(observedArray), size=min(max_model_step, len(observedArray)), replace=False)
-                for index in indexs:
-                    sP, aP = observedArray[index]
-                    nextSP,rP, finishedP = model[(sP,aP)]
-
-                    #target = R + gamma * max Q(S',a')
-                    bestQP = np.max(q[nextSP])
-                    target = rP + gamma * bestQP
-                    #Q(S,A) = Q(S,A) + a[R + gamma max Q(S',a) - Q(S,A)]
-                    if finishedP:
-                        q[sP,aP] += step_size * (rP - q[sP, aP])
-                    else:
-                        q[sP,aP] += step_size * (target - q[sP,aP])
-            #S = S'
-            state = nextS
-
-    #getting greedy from Q
-    greedyAs = np.argmax(q,axis=1)
-    Pi = np.zeros((S,S*A))
-    for s in range(S):
-        Pi[s,s * A + greedyAs[s]] = 1.0
-
-    qCol = q.reshape((S*A,1))
-
-    return Pi, qCol
-"""
 #TODO: make helper functs like in A2 (that sucks)
 #current Dyna-Q attempt No.13
 
@@ -108,13 +23,11 @@ class DynaQ:
         self.epsilon = epsilon
         self.max_model_step = max_model_step
 
-        self.S = env_size * env_size
+        self.S = env_size * env_size * 16
         self.A = 4
 
         self.q = np.zeros((self.S, self.A))
-
         self.model = {}
-
         self.visited_sa = []
 
         #important so agent doesnt do illegal move
@@ -129,24 +42,49 @@ class DynaQ:
         }
 
         self.rng = np.random.default_rng()
+        self.agent_trail = []
+        self.target_trail = []
 
-    #LLM assisted with debugging this stupid dumb sillybilly error bs i was having with hashsize conversion overflow
-    def state2index(self,grid_obs):
+    #this should let dyna Q actually compete with our MCTS implementation (before mine was basically blind)
+    def getLocalObsrv(self,agent_pos, agent_trail, target_trail, env_size):
+        x,y = agent_pos
+        local_obs = 0
+        #check surrounding sqrs arnd agent current pos
+        for dx in [-1, 0,1]:
+            for dy in [-1,0, 1]:
+                nx, ny = x + dx, y + dy
+                grid_pos_index = (dx + 1) * 3 + (dy + 1)
 
-        if isinstance(grid_obs, tuple) and len(grid_obs) == 2:
-            #if pos only
-            x, y = grid_obs
-            return x * self.env_size + y
+                #check if out of bounds or going into tail
+                if nx < 0 or nx >= env_size or ny < 0 or ny >= env_size or  (nx, ny) in agent_trail or (nx, ny) in target_trail:
+                    local_obs = local_obs | (1 << grid_pos_index)
 
-        #compress
-        grid_flat = grid_obs.flatten()
+        return local_obs
 
-        #convert grid to a base 3 num
-        state_index = 0
-        for i, cell in enumerate(grid_flat):
-            state_index = state_index * 3 + (cell % 3)  # Use modulo to ensure small values
+    def state2index(self,observation):
 
-        return state_index % self.S
+        if isinstance(observation, dict):
+            agent_pos = observation["agent1"]
+            agent_trail = getattr(self, 'agent_trail', [])
+            target_trail = getattr(self, 'target_trail', [])
+            env_size = getattr(self, 'env_size', 15)
+
+            local_obs = self.getLocalObsrv(agent_pos, agent_trail, target_trail, env_size)
+            x,y = agent_pos
+            pos_index = x * self.env_size + y
+            return (pos_index * 512 + local_obs) % self.S
+
+        elif isinstance(observation, tuple) and len(observation) == 2:
+            #og pos only fallback
+            x, y = observation
+            return (x * self.env_size + y) % self.S
+        else:
+            #from last vers
+            return hash(str(observation)) % self.S
+
+    def updateTrailInfo(self, agent_trail, target_trail):
+        self.agent_trail = list(agent_trail)
+        self.target_trail = list(target_trail)
 
     def getValidAct(self, state_index):
         acts = [0,1,2,3]
@@ -209,4 +147,3 @@ class DynaQ:
 
     def resetEp(self):
         self.prev_act = None
-
