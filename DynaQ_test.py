@@ -58,9 +58,9 @@ def main():
     dyna_q_agent1 = DynaQ(
         env_size=env.size,
         gamma=0.9,
-        step_size=0.1,
-        epsilon=0.3,
-        max_model_step=50
+        step_size=0.3,
+        epsilon=0.05,
+        max_model_step=150
     )
 
     obs, info = env.reset()
@@ -76,6 +76,8 @@ def main():
     while True:
         time.sleep(0.01)
 
+        dyna_q_agent1.updateTrailInfo(env.agent_trail, env.target_trail)
+
         state_index = dyna_q_agent1.state2index(obs["agent1"])
         our_action = dyna_q_agent1.chooseAct(state_index, training=True)
 
@@ -84,8 +86,11 @@ def main():
         obs, (r_our, r_opp),terminated, truncated, info = env.step( our_action, opp_action)
         total_reward += r_our
 
+        dyna_q_agent1.updateTrailInfo(env.agent_trail, env.target_trail)
+
         #update dynaQ agent
         next_state_index = dyna_q_agent1.state2index(obs["agent1"])
+
         dyna_q_agent1.update(state_index, our_action, r_our, next_state_index, terminated)
         dyna_q_agent1.planning()
 
@@ -94,10 +99,10 @@ def main():
         blue_pos = tuple(env._agent_location.tolist())
         red_pos = tuple(env._target_location.tolist())
 
-        print(f"Step {step:03d} | Blue: {dir_map[our_action]:<5} | Red: {dir_map[opp_action]:<5} "
+        """        print(f"Step {step:03d} | Blue: {dir_map[our_action]:<5} | Red: {dir_map[opp_action]:<5} "
           f"| Reward (Blue,Red): ({r_our:+5.1f}, {r_opp:+5.1f}) "
           f"| Blue Pos: {blue_pos} | Red Pos: {red_pos} "
-          f"| Total Blue Reward: {total_reward:+6.1f}")
+          f"| Total Blue Reward: {total_reward:+6.1f}")"""
 
         step += 1
 

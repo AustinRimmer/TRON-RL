@@ -23,7 +23,7 @@ class DynaQ:
         self.epsilon = epsilon
         self.max_model_step = max_model_step
 
-        self.S = env_size * env_size * 16
+        self.S = env_size * env_size
         self.A = 4
 
         self.q = np.zeros((self.S, self.A))
@@ -50,15 +50,19 @@ class DynaQ:
         x,y = agent_pos
         local_obs = 0
         #check surrounding sqrs arnd agent current pos
-        for dx in [-1, 0,1]:
+        """        for dx in [-1, 0,1]:
             for dy in [-1,0, 1]:
                 nx, ny = x + dx, y + dy
                 grid_pos_index = (dx + 1) * 3 + (dy + 1)
 
                 #check if out of bounds or going into tail
                 if nx < 0 or nx >= env_size or ny < 0 or ny >= env_size or  (nx, ny) in agent_trail or (nx, ny) in target_trail:
-                    local_obs = local_obs | (1 << grid_pos_index)
-
+                    local_obs = local_obs | (1 << grid_pos_index)"""
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        for i, (dx, dy) in enumerate(directions):
+            nx, ny = x + dx, y + dy
+            if (nx < 0 or nx >= env_size or ny < 0 or ny >= env_size or (nx, ny) in agent_trail or (nx, ny) in target_trail):
+                local_obs |= (1 << i)  # Mark as blocked
         return local_obs
 
     def state2index(self,observation):
