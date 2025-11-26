@@ -1,5 +1,5 @@
 # mcts_agent.py
-# Monte Carlo Tree Search for the provided Tron environment.
+# Monte Carlo Tree Search for Tron environment.
 # Assumes: env.step(our_action, opp_action) -> (obs, (r_our, r_opp), terminated, truncated, info)
 # Controls the "blue" agent (the first action parameter in env.step).
 
@@ -234,7 +234,7 @@ class MCTSAgent:
         new_pos = (nx, ny)
 
         if (new_pos == (ax, ay)) or (new_pos in state.agent_trail) or (new_pos in state.target_trail):
-            # Suicide detected - fallback to safe random
+            # fallback to safe random
             safe_actions = self._safe_our_actions_from_state(state)
             fallback = random.choice(safe_actions)
             #print(f"[MCTS] Avoided suicidal action {best_a}, picked fallback {fallback}")
