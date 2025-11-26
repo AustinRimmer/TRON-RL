@@ -50,7 +50,7 @@ def run_match(
             red_agent.update(state_idx, red_action, ep_reward_red, next_state_idx, terminated)
 
             if render:
-                env.render()      # ← your pygame renderer
+                env.render()      
                 time.sleep(sleep_time)
 
         # Episode finished — count result
