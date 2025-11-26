@@ -177,7 +177,7 @@ class MCTSAgent:
     # ---------- opponent & rollout policies ----------
 
     def _opp_action(self, state: SimTronState):
-        # Simple random policy. Replace with heuristics if desired.
+        # simple random policy, replace with heuristics if desired
         safe_action = self._safe_opp_actions_from_state(state)
         return random.choice(safe_action)
 
@@ -209,8 +209,8 @@ class MCTSAgent:
         if self.root is None:
             self.set_root_from_env(env)
         else:
-            # Try to reuse subtree if possible (if previous chosen action child exists and matches env)
-            # Since opponent actions are sampled, we can't perfectly match; safest is to rebuild.
+            #try to reuse subtree if possible (if previous chosen action child exists and matches env)
+            #Since opponent actions are sampled, we can't perfectly match so safest is to rebuild
             self.set_root_from_env(env)
 
         for _ in range(self.simulations_per_move):
@@ -266,8 +266,8 @@ class MCTSAgent:
             terminal = term
             immediate_reward = r_our
         else:
-            # No untried actions; we're at a leaf that's fully expanded.
-            # We'll start rollout from here.
+            #theres noo untried actions since we're at a leaf that's fully expanded.
+            # we'll start rollout from here.
             pass
 
         # 3) Simulation (rollout) from 'node'
@@ -277,7 +277,7 @@ class MCTSAgent:
 
         cur_state = node.state
         if terminal:
-            G = 0.0  # the step reward was already applied in transition to node; we back up from parent using W updates below
+            G = 0.0  # the step reward was already applied in transition to node, we back up from parent using W updates below
         else:
             while steps < self.rollout_depth:
                 a_our, a_opp = self._rollout_policy(cur_state)
@@ -317,7 +317,7 @@ class MCTSAgent:
 
             safe.append(a)
 
-        # If boxed-in, we must return something to keep the sim moving.
+        # if boxed-in, we must return something to keep the sim moving.
         return safe if safe else [0, 1, 2, 3]
 
 
@@ -341,9 +341,7 @@ class MCTSAgent:
             safe.append(a)
         return safe if safe else [0, 1, 2, 3]
 
-
-# ----------------------- Convenience runner ------------------------
-
+#just testing
 def run_mcts_vs_random(env, agent: MCTSAgent, render=True, reset_on_terminal=True, max_steps=10_000):
     """
     Example loop: our MCTS agent vs random opponent.
