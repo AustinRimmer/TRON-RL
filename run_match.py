@@ -45,21 +45,22 @@ def run_match(
             ep_reward_blue += r_blue
             ep_reward_red += r_red
 
-            # Dyna-Q update (MCTS doesn't learn here)
+            #dynaq update + planning
             next_state_idx = red_agent.state2index(obs["agent1"])
             red_agent.update(state_idx, red_action, ep_reward_red, next_state_idx, terminated)
+            red_agent.planning()
 
             if render:
-                env.render()      
+                env.render()
                 time.sleep(sleep_time)
 
-        # Episode finished — count result
+        #for terminal output
         if ep_reward_blue > ep_reward_red:
             results["blue_wins"] += 1
-            print(f"Episode {ep+1}: BLUE wins")
+            print(f"Episode {ep+1}: BLUE(MCTS) wins")
         elif ep_reward_red > ep_reward_blue:
             results["red_wins"] += 1
-            print(f"Episode {ep+1}: RED wins")
+            print(f"Episode {ep+1}: RED(DynaQ) wins")
         else:
             results["ties"] += 1
             print(f"Episode {ep+1}: TIE")
