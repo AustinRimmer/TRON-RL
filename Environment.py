@@ -247,15 +247,14 @@ class Tron(gym.Env):
         new_agent_pos = tuple(agent_pos)
         new_target_pos = tuple(target_pos)
         #terminate if the agent has caught the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
 
-        loss = False
+        #collison check
+        blue_hit_own_trail = new_agent_pos in self.agent_trail
+        blue_hit_enemy_trail = new_agent_pos in self.target_trail
+        red_hit_own_trail = new_target_pos in self.target_trail
+        red_hit_enemy_trail = new_target_pos in self.agent_trail
 
-        #terminate if there is a collision with enemy/self trail
-        if (new_agent_pos in self.target_trail or new_target_pos in self.agent_trail or #touching a trail
-                new_agent_pos in self.agent_trail or new_target_pos in self.target_trail): #touching own trail
-            loss = True
-            terminated = True
+        terminated = (blue_hit_own_trail or blue_hit_enemy_trail or red_hit_own_trail or red_hit_enemy_trail)
 
         if not terminated:
             #update positions for both agents
@@ -277,11 +276,15 @@ class Tron(gym.Env):
             blue_hit = new_agent_pos in self.target_trail or new_agent_pos in self.agent_trail
             red_hit = new_target_pos in self.agent_trail or new_target_pos in self.target_trail
 
-            if blue_hit and red_hit:
+            if blue_hit_own_trail and not (blue_hit_enemy_trail or red_hit_own_trail or red_hit_enemy_trail):
+                r_blue, r_red = -20, 0
+            elif red_hit_own_trail and not (blue_hit_own_trail or blue_hit_enemy_trail or red_hit_enemy_trail):
+                r_blue, r_red = 0, -20
+            elif blue_hit_enemy_trail and red_hit_enemy_trail:
                 r_blue = r_red = 0
-            elif blue_hit:
+            elif blue_hit_enemy_trail:
                 r_blue, r_red = -20, 20
-            elif red_hit:
+            elif red_hit_enemy_trail:
                 r_blue, r_red = 20, -20
             else:
                 r_blue = r_red = self.step_reward
