@@ -1,0 +1,46 @@
+The last 2 weeks we went over planning our env demo and what we'll be using in it:
+We're going to use MCTS
+Each agent will have access to:
+Board: 64x64
+Cell states: 1 or 0 (free or trail)
+Directions: 3 (cant go backwards due to trail)
+W/L state + total
+Reward Structure:
+For each move the agent makes that extends survival, there will be a discount, so that agents are more incentivized to end the game by attacking each other.
+Loses -50 (subject to change to adjust behaviour)
+Wins +50 (subject to change to adjust behaviour)
+Ties 0
+Note: W/L not discounted, we're thinking about letting agents have W/L totals
+tile: +1, 70% discount as previously mentioned
+What we all did: decided on algorithm, researched what we’ve learnt so far, determined computationally viable approach to our env.
+
+Austin:
+What I did: 
+  - set up git
+  - initial commit and read me
+  - set meeting time, added git collaborators
+What I’ll do: 
+  - collaboratively develop env 
+  - set up custom Gym Environment
+  - experiment with Gym
+
+Sahel:
+What I did:
+  Research different solutions and strategies for beating TRON:
+    - Cutting off opponents
+    - Moving to open areas for survivability
+    - Staying close to walls to ‘thread the needle’ and find escape routes.
+What I plan to do:
+  Code reward structure and figure out weights and discounts
+
+Rayhan:
+What I did: 
+  Created the initial reward structure to follow  
+What I plan to do:
+  Implement MCTS algorithm
+
+Teniola:
+What I did:
+  Research and discuss different algorithms and methods to solve TRON
+What I plan to do:
+  Collaboratively develop the environment and integrate the grid world into MCTS

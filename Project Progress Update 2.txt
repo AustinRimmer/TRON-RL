@@ -1,0 +1,24 @@
+The last two weeks we completed our env demo (see commits before this).
+Detailed commits in order (most are very self explanatory):
+1.Initial commit 
+2.Created README.md
+3.Add Week 1 & 2 Progress Report
+4.Added Env Skeleton code, and some basic reward structure: followed and setup Gym Env based on tutorial on their site and looking at the environment code from assignment 2
+5.Removed some redundancy
+6.made code workable I think: fixed imports and how we rendered the env by looking at what prof did in A2
+7.added testbed file to render environment
+8.updated grid colour to match tron
+9.pushing code to add in second agent, and add in trails and collisions
+10.removing redundant step method that only accounts for single agent
+11.added testing function for showing collision
+12.Increase Tron environment size for collision testing
+13.trail length modified: from 3 to 1000
+14.added source comment: for env setup
+15.Add files via upload
+
+these next two weeks our focus will be on making and implementing MCTS for agent 1 then selecting a separate comparable algorithm for agent 2. 
+This change occurred after we realized it would be both more interesting and allow us to better display our knowledge by using multiple algorithms rather than just 1.
+These next two weeks will also allow us to better refine our exisiting reward structure, since we do not have any actual learning occuring thus far they may need tweaking over the next two weeks.
+
+
+
