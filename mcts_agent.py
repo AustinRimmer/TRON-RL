@@ -206,39 +206,21 @@ class MCTSAgent:
         Choose an action for the current env state. 
         Builds/updates a search tree rooted at the current state
         """
-        if self.root is None:
-            self.set_root_from_env(env)
-        else:
-            #try to reuse subtree if possible (if previous chosen action child exists and matches env)
-            #Since opponent actions are sampled, we can't perfectly match so safest is to rebuild
-            self.set_root_from_env(env)
+        self.set_root_from_env(env)
 
         for _ in range(self.simulations_per_move):
             self._simulate_once()
 
         # pick the most visited child (robust)
         if not self.root.children:
-            return random.randint(0, 3)
+            safe = self._safe_our_actions_from_state(self.root.state) # if noththing is expanded, fallback to safe random
+            return random.choice(safe)
 
         # for a, child in self.root.children.items():
         #     print(f"Action {a}: N={child.N}, W={child.W:.2f}, Avg={child.W / child.N:.2f}")
+        # print()
 
         best_a = max(self.root.children.items(), key=lambda kv: (kv[1].W / kv[1].N) if kv[1].N > 0 else float('-inf'))[0]
-        
-        # Check if best_a would immediately kill us
-        state = SimTronState.from_env(env)
-        dx, dy = SimTronState.DIRS[best_a]
-        ax, ay = state.agent_pos
-        nx = max(0, min(state.size - 1, ax + dx))
-        ny = max(0, min(state.size - 1, ay + dy))
-        new_pos = (nx, ny)
-
-        if (new_pos == (ax, ay)) or (new_pos in state.agent_trail) or (new_pos in state.target_trail):
-            # fallback to safe random
-            safe_actions = self._safe_our_actions_from_state(state)
-            fallback = random.choice(safe_actions)
-            #print(f"[MCTS] Avoided suicidal action {best_a}, picked fallback {fallback}")
-            return fallback
         return best_a
 
     # ---------- one simulation ----------
@@ -255,10 +237,16 @@ class MCTSAgent:
         # 2) Expansion (if non-terminal and we still have actions)
         terminal = False
         if node.untried_actions:
-            a = node.untried_actions.pop()  # try a new action
-            # sample opponent action
+            safe_ours = set(self._safe_our_actions_from_state(node.state))
+            candidates = list(node.untried_actions.intersection(safe_ours))
+            if not candidates:
+                candidates = list(node.untried_actions)  # boxed in
+            a = random.choice(candidates)
+            node.untried_actions.discard(a)
+
             opp_a = self._opp_action(node.state)
             next_state, (r_our, _), term = node.state.step(a, opp_a)
+
             child = MCTSNode(next_state, parent=node, action_from_parent=a)
             node.children[a] = child
             path.append(child)
@@ -277,7 +265,7 @@ class MCTSAgent:
 
         cur_state = node.state
         if terminal:
-            G = 0.0  # the step reward was already applied in transition to node, we back up from parent using W updates below
+            G = immediate_reward  # keep immediate reward only
         else:
             while steps < self.rollout_depth:
                 a_our, a_opp = self._rollout_policy(cur_state)
