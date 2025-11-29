@@ -1,14 +1,14 @@
 import time
 from Environment import Tron
 from mcts_agent import MCTSAgent
-from DynaQ import DynaQ
+from testing import DynaQ
 
 def run_match(
         episodes=50,
         render=True,
         sleep_time=0.05,
 ):
-    env = Tron()
+    env = Tron(size=20)
 
 
     blue_agent = MCTSAgent(simulations_per_move=200,
@@ -36,7 +36,7 @@ def run_match(
 
             blue_action = blue_agent.act(env)
 
-            state_idx = red_agent.state2index(obs["agent2"])
+            state_idx = red_agent.state2index(obs)
             red_action = red_agent.chooseAct(state_idx, training=True)
 
             #step
