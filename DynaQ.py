@@ -44,25 +44,27 @@ class DynaQ:
         self.rng = np.random.default_rng()
         self.agent_trail = []
         self.target_trail = []
+        self.prev_state_pos = None
+        self.prev_state_obs = 0
 
     #this should let dyna Q actually compete with our MCTS implementation (before mine was basically blind)
     def getLocalObsrv(self,agent_pos, agent_trail, target_trail, env_size):
         x,y = agent_pos
         local_obs = 0
-        #check surrounding sqrs arnd agent current pos
-        """        for dx in [-1, 0,1]:
-            for dy in [-1,0, 1]:
-                nx, ny = x + dx, y + dy
-                grid_pos_index = (dx + 1) * 3 + (dy + 1)
+        #check surrounding sqrs arnd agent curent pos
+        #bit and actions maping, 0=Right(+x), 1=Up(+y), 2=Left(-x), 3=Down(-y)
+        directions = [
+            (1, 0, 0),  #up: bit 0
+            (0, 1, 1),   #down: bit 1
+            (-1, 0, 2),  #left: bit 2
+            (0, -1, 3)    #right: bit 3
+        ]
+        
 
-                #check if out of bounds or going into tail
-                if nx < 0 or nx >= env_size or ny < 0 or ny >= env_size or  (nx, ny) in agent_trail or (nx, ny) in target_trail:
-                    local_obs = local_obs | (1 << grid_pos_index)"""
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        for i, (dx, dy) in enumerate(directions):
+        for dx, dy, bit_pos in directions:
             nx, ny = x + dx, y + dy
             if (nx < 0 or nx >= env_size or ny < 0 or ny >= env_size or (nx, ny) in agent_trail or (nx, ny) in target_trail):
-                local_obs |= (1 << i)  # Mark as blocked
+                local_obs |= (1 << bit_pos)  #Mark as blocked
         return local_obs
 
     def state2index(self,observation):
@@ -76,11 +78,16 @@ class DynaQ:
             local_obs = self.getLocalObsrv(agent_pos, agent_trail, target_trail, env_size)
             x,y = agent_pos
             pos_index = x * self.env_size + y
+            #store statee position adn obstacles in bimmedate box around
+            self.prev_state_pos = (x,y)
+            self.prev_state_obs = local_obs
             return (pos_index * 512 + local_obs) % self.S
 
         elif isinstance(observation, tuple) and len(observation) == 2:
             #og pos only fallback
             x, y = observation
+            self.prev_state_pos = (x,y)
+            self.prev_state_obs = 0
             return (x * self.env_size + y) % self.S
         else:
             #from last vers
@@ -92,12 +99,24 @@ class DynaQ:
 
     def getValidAct(self, state_index):
         acts = [0,1,2,3]
-
-        if self.prev_act is not None:
-            op_act = self.op_acts[self.prev_act]
-            valid_acts = [action for action in acts if action != op_act]
-            return valid_acts
-        return acts
+        valid_acts = list(acts)
+        #unpacking bits to check if obstacles present
+        #0=up blocked, 1=down blocked, 2=left blocked, 3=right blocked
+        if hasattr(self, 'prev_state_obs') and self.prev_state_obs is not None:
+            local_obs = self.prev_state_obs
+            
+            # remove unsfe invalid actions
+            # 0=Right: check bit 0, 1=Up: check bit 1, 2=Left: check bit 2, 3=Down: check bit 3
+            obs = {
+                0: (local_obs & (1 << 0)) != 0,  # Right blocked?
+                1: (local_obs & (1 << 1)) != 0,  # Up blocked?
+                2: (local_obs & (1 << 2)) != 0,  # Left blocked?
+                3: (local_obs & (1 << 3)) != 0   # Down blocked?
+            }
+            valid_acts = [action for action in valid_acts if not obs[action]]
+        
+        #if obstacle everywhere(definite loss) return entire actions space
+        return valid_acts if len(valid_acts)>0 else acts
 
     def chooseAct(self,state_index, training=True):
         valid_acts = self.getValidAct(state_index)
