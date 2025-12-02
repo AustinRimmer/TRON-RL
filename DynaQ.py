@@ -59,7 +59,7 @@ class DynaQ:
             (-1, 0, 2),  #left: bit 2
             (0, -1, 3)    #right: bit 3
         ]
-        
+
 
         for dx, dy, bit_pos in directions:
             nx, ny = x + dx, y + dy
@@ -105,7 +105,7 @@ class DynaQ:
         if hasattr(self, 'prev_state_obs') and self.prev_state_obs is not None:
             local_obs = self.prev_state_obs
             
-            # remove unsfe invalid actions
+            #remove unsfe invalid actions
             # 0=Right: check bit 0, 1=Up: check bit 1, 2=Left: check bit 2, 3=Down: check bit 3
             obs = {
                 0: (local_obs & (1 << 0)) != 0,  # Right blocked?

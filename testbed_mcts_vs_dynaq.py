@@ -6,11 +6,11 @@ from mcts_agent import MCTSAgent
 from DynaQ import DynaQ
 
 # ----------------- Config -----------------
-NUM_EPISODES     = 100
+NUM_EPISODES     = 5000
 MAX_STEPS        = 10_000
-RENDER_FIRST_N   = 3     # render first 3 games
+RENDER_FIRST_N   = 1    # render first 3 games
 RENDER_LAST_N    = 3     # and last 3 games
-GRID_SIZE        = 15    # Tron(size=GRID_SIZE)
+GRID_SIZE        = 32    # Tron(size=GRID_SIZE)
 # ------------------------------------------
 
 
@@ -44,9 +44,9 @@ def run():
     dynaq = DynaQ(
         env_size=GRID_SIZE,
         gamma=0.95,
-        step_size=0.1,
-        epsilon=0.1,
-        max_model_step=5,
+        step_size=0.2,
+        epsilon=0.05,
+        max_model_step=100,
     )
 
     blue_total_return = 0.0
