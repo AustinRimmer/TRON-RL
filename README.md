@@ -10,11 +10,11 @@ This file outputs to the terminal wins, losses, and other stats, while it render
 Using Python 3.10 (or later)
 
 ## Required Packages
-numpy==1.25.2
-gymnasium==1.2.1  
-pygame==2.6.1  
-scipy==1.11.2
-matpotlib==3.7.2
+numpy==1.25.2  
+gymnasium==1.2.1    
+pygame==2.6.1    
+scipy==1.11.2  
+matpotlib==3.7.2  
 
 ## Step by step instructions for running
 1. download code
