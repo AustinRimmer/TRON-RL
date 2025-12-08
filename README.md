@@ -10,13 +10,15 @@ This file output to the terminal wins losses and other stats.
 Using Python 3.10 (or later)
 
 ## Required Packages
-numpy==1.26.4  
+numpy==1.25.2
 gymnasium==1.2.1  
 pygame==2.6.1  
+scipy==1.11.2
+matpotlib==3.7.2
 
 ## Step by step instructions for running
 1. download code
-2. install packages (if needed) --> use pip install -r requirements.txt
+2. install packages if needed --> use pip install -r requirements.txt
 3. run testbed_mcts_vs_dyanaq.py
 
 
