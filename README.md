@@ -1,7 +1,7 @@
 
 # TRON-RL
 ## GROUP  35
-Sahel Reza (101219693), Austin Rimmer 101219747, Rayhan Moraldo 101229564, Teniola Hambolu 10122007
+Sahel Reza (101219693), Austin Rimmer (101219747), Rayhan Moraldo (101229564), Teniola Hambolu (10122007)
 
 testbed_mcts_vs_dyanaq.py contains a testbed for running and training the dynaq agent(red) vs the MCTS agent(blue).  
 This file outputs to the terminal wins, losses, and other stats, while it renders the Tron enviroment with Pygame.
