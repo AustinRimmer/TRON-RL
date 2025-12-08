@@ -16,7 +16,7 @@ pygame==2.6.1
 
 ## Step by step instructions for running
 1. download code
-2. install packages (if needed0
+2. install packages (if needed) --> use pip install -r requirements.txt
 3. run testbed_mcts_vs_dyanaq.py
 
 
